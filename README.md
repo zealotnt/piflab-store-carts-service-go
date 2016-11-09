@@ -52,23 +52,6 @@ http://docs.piflabstore.apiary.io/
 ### Seed
 `go run db/seeds/main.go`
 
-## Docker-compose
-
-### Run entire app
-`docker-compose up`
-
-### Manually start database
-`docker-compose up -d db`
-
-### Manually run piflab-store-api command
-`docker-compose run -p 80:80 api <command you want to run>`
-
-### Practical Docker-compose use
-- cd to root of project directory
-- Start DB `docker-compose up -d db`
-- Start API `docker-compose run -p 80:80 api bash`
-- Start bash instance of DB `sudo docker exec -it <container_id> bash`
-
 ### Golang dump
 ```
 import "github.com/davecgh/go-spew/spew"
