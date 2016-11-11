@@ -7,33 +7,11 @@ import (
 
 	"errors"
 	"math/rand"
-	"strings"
 	"time"
 )
 
 type OrderRepository struct {
 	*DB
-}
-
-func (repo OrderRepository) generateOrderCode(order *Order) error {
-	rand.Seed(time.Now().UTC().UnixNano())
-
-try_gen_other_value:
-	order.OrderInfo.OrderCode = fake.CharactersN(32)
-
-	temp_order := &Order{}
-	if err := repo.DB.Where("code = ?", order.OrderInfo.OrderCode).Find(temp_order).Error; err != nil {
-		// Check if err is not found -> code is unique
-		if err.Error() == "record not found" {
-			return nil
-		}
-
-		// Otherwise, this is database operation error
-		return errors.New("Database error")
-	}
-
-	// duplicate, try again
-	goto try_gen_other_value
 }
 
 func (repo OrderRepository) generateAccessToken(order *Order) error {
@@ -82,23 +60,11 @@ func (repo OrderRepository) updateOrder(order *Order) error {
 		return err
 	}
 
-	// Check if need to create the order_status_log item
-	if order.Status != "cart" {
-		order_status_log := OrderStatusLog{
-			Code:   order.OrderInfo.OrderCode,
-			Status: order.Status,
-		}
-
-		if err := tx.Create(&order_status_log).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-
 	tx.Commit()
 
 	repo.clearNullQuantity()
 
+	// TODO: bring this method out of repo, should call in handler
 	// Don't return access_token when updating
 	order.EraseAccessToken()
 
@@ -126,23 +92,25 @@ func (repo OrderRepository) FindByOrderId(order_code string) (*Order, error) {
 }
 
 func (repo OrderRepository) GetOrderByOrdercode(order_code string) (*Order, error) {
-	order := &Order{}
-	items := &[]OrderItem{}
+	// TODO: Call Order_Service_API
+	// order := &Order{}
+	// items := &[]OrderItem{}
 
-	// find a order by its order_code
-	if err := repo.DB.Where("code = ?", order_code).Find(order).Error; err != nil {
-		return nil, err
-	}
+	// // find a order by its order_code
+	// if err := repo.DB.Where("code = ?", order_code).Find(order).Error; err != nil {
+	// 	return nil, err
+	// }
 
-	// use order.Id to find its OrderItem data (order.Id is its forein key)
-	if err := repo.DB.Where("order_id = ?", order.Id).Find(items).Error; err != nil {
-		return nil, err
-	}
+	// // use order.Id to find its OrderItem data (order.Id is its forein key)
+	// if err := repo.DB.Where("order_id = ?", order.Id).Find(items).Error; err != nil {
+	// 	return nil, err
+	// }
 
-	// use the order.Items to update products information
-	order.Items = *items
+	// // use the order.Items to update products information
+	// order.Items = *items
 
-	return order, nil
+	// return order, nil
+	return nil, nil
 }
 
 func (repo OrderRepository) GetOrder(access_token string) (*Order, error) {
@@ -202,62 +170,7 @@ func (repo OrderRepository) CountOrders() (uint, error) {
 	return count, err
 }
 
-func (repo OrderRepository) GetPage(offset uint, limit uint, status string, sort_field string, sort_order string, search string) (*OrderSlice, uint, error) {
-	orders := &OrderSlice{}
-	items := &[]OrderItem{}
-	var err error
-	var where_param string
-
-	if status == "" {
-		where_param = "status!='cart'"
-	} else {
-		where_param = "status='" + status + "'"
-	}
-
-	if search != "" {
-		where_param += " AND LOWER(customer_name) LIKE  '%" + strings.ToLower(search) + "%'"
-	}
-
-	err = repo.DB.Order(sort_field + " " + sort_order).Offset(int(offset)).Where(where_param).Limit(int(limit)).Find(orders).Error
-
-	for idx, order := range *orders {
-		// use order.Id to find its OrderItem data (order.Id is its forein key)
-		if err := repo.DB.Where("order_id = ?", order.Id).Find(items).Error; err != nil {
-			return nil, 0, err
-		}
-		// use the order.Items to update products information
-		(*orders)[idx].Items = *items
-		(*orders)[idx].CalculateAmount()
-	}
-
-	count, _ := repo.CountOrders()
-
-	return orders, count, err
-}
-
 func (repo OrderRepository) CheckoutOrder(order *Order) error {
-	if err := repo.generateOrderCode(order); err != nil {
-		return err
-	}
-
-	tx := repo.DB.Begin()
-
-	if err := tx.Save(order).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	// Create the order_status_log item
-	order_status_log := OrderStatusLog{
-		Code:   order.OrderInfo.OrderCode,
-		Status: order.Status,
-	}
-	if err := tx.Create(&order_status_log).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	tx.Commit()
-
+	// TODO: Call ORERS_SERVICE_API
 	return nil
 }

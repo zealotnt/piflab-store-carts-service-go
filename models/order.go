@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"strconv"
 	"time"
 )
 
@@ -32,13 +31,10 @@ type CheckoutReturn struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type CheckoutReturnSlice []CheckoutReturn
-type OrderSlice []Order
-
 type Order struct {
 	Id          uint   `json:"-"`
 	AccessToken string `json:"access_token,omitempty"`
-	Status      string `json:"status"`
+	IsCheckout  bool   `json:"is_checkout"`
 
 	Items []OrderItem `json:"items" sql:"order_items"`
 
@@ -65,68 +61,6 @@ type OrderItem struct {
 	ProductImageThumbnailUrl *string `json:"image_thumbnail_url" sql:"-"`
 	ProductPrice             int     `json:"price" sql:"column:price"`
 	Quantity                 int     `json:"quantity"`
-}
-
-type OrderUrl struct {
-	Next     *string `json:"next"`
-	Previous *string `json:"previous"`
-}
-
-type OrderPage struct {
-	Data   *CheckoutReturnSlice `json:"data"`
-	Paging OrderUrl             `json:"paging"`
-}
-
-func getOrderPage(offset uint, limit uint, total uint, sort string) OrderUrl {
-	prevNum := uint64(offset - limit)
-	nextNum := uint64(offset + limit)
-	if offset < limit {
-		prevNum = 0
-	}
-	if total <= offset {
-		if total > limit {
-			prevNum = uint64(total - limit)
-		} else {
-			prevNum = 0
-		}
-	}
-	next := "/orders?offset=" + strconv.FormatUint(nextNum, 10) + "&limit=" + strconv.FormatUint(uint64(limit), 10) + "&" + sort
-	previous := "/orders?offset=" + strconv.FormatUint(prevNum, 10) + "&limit=" + strconv.FormatUint(uint64(limit), 10) + "&" + sort
-
-	// Nothing to show on next_url
-	if uint64(total) <= nextNum {
-		// If offset already zero, not thing to show on previous_url also
-		if offset == 0 {
-			return OrderUrl{}
-		}
-
-		// At least, we have something to show on previous_url
-		return OrderUrl{
-			Previous: &previous,
-		}
-	}
-	if offset == 0 {
-		return OrderUrl{
-			Next: &next,
-		}
-	}
-	return OrderUrl{
-		Next:     &next,
-		Previous: &previous,
-	}
-
-}
-
-func (orders OrderSlice) GetPaging(offset uint, limit uint, total uint, sort string) *OrderPage {
-	orders_return := CheckoutReturnSlice{}
-	for idx, _ := range orders {
-		orders_return = append(orders_return, orders[idx].ReturnCheckoutRequest())
-		orders_return[idx].Id = orders[idx].OrderCode
-	}
-	return &OrderPage{
-		Data:   &orders_return,
-		Paging: getOrderPage(offset, limit, total, sort),
-	}
 }
 
 func (order *Order) UpdateItems(product_id *uint, item_id *uint, quantity int, product_name string, product_price int) error {
@@ -192,18 +126,4 @@ func (order *Order) RemoveZeroQuantityItems() {
 			return
 		}
 	}
-}
-
-func (order *Order) ReturnCheckoutRequest() CheckoutReturn {
-	ret := new(CheckoutReturn)
-	ret.Id = order.OrderCode
-	ret.Items = order.Items
-	ret.Amounts = order.Amounts
-	if order.OrderInfo.CustomerName != "" {
-		ret.OrderInfo = &order.OrderInfo
-	}
-	ret.Status = order.Status
-	ret.UpdatedAt = order.UpdatedAt
-	ret.CreatedAt = order.CreatedAt
-	return *ret
 }

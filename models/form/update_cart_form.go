@@ -63,8 +63,9 @@ func (form *CartForm) Validate(method string, app ...*App) error {
 			return err
 		}
 
-		if order.Status != "cart" {
-			return errors.New("Order is in " + order.Status + " state, please use another cart")
+		// TODO: need to check order.IsCheckout instead
+		if order.IsCheckout == true {
+			return errors.New("Order is in already checkout, please create another order")
 		}
 	}
 
@@ -147,13 +148,14 @@ func (form *CartForm) Order(app *App, item_id ...uint) (*Order, error) {
 	// If this is the first time create order,
 	// this will avoid error when create order
 	// (pq: invalid input value for enum order_status: "")
-	if order.Status == "" {
-		order.Status = "cart"
-	}
+	// Note: Need to implement
+	// if order.Status == "" {
+	// 	order.Status = "cart"
+	// }
 
-	if order.Status != "cart" {
-		return order, errors.New("Order is in " + order.Status + " state, please use another cart")
-	}
+	// if order.Status != "cart" {
+	// 	return order, errors.New("Order is in " + order.Status + " state, please use another cart")
+	// }
 
 	return order, err
 }

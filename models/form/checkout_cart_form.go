@@ -86,8 +86,9 @@ func (form *CheckoutCartForm) Order(app *App) (*Order, error) {
 		return order, err
 	}
 
-	if order.Status != "cart" {
-		return order, errors.New("Order is in " + order.Status + " state, please use another cart")
+	// TODO: need to check order.IsCheckout instead
+	if order.IsCheckout == true {
+		return order, errors.New("Order is already checked out, please use another order")
 	}
 
 	order.OrderInfo.CustomerName = *form.CustomerName
@@ -98,9 +99,6 @@ func (form *CheckoutCartForm) Order(app *App) (*Order, error) {
 	if form.CustomerNote != nil {
 		order.OrderInfo.CustomerNote = *form.CustomerNote
 	}
-
-	// Change status to processing, any other change to oder_items is rejected from now on
-	order.Status = "processing"
 
 	return order, err
 }
