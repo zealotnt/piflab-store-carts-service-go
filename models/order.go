@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -13,10 +14,10 @@ type Amount struct {
 
 type OrderInfo struct {
 	OrderCode       string `json:"-" sql:"column:code"`
-	CustomerName    string `json:"name" sql:"customer_name"`
-	CustomerAddress string `json:"address" sql:"customer_address"`
-	CustomerPhone   string `json:"phone" sql:"customer_phone"`
-	CustomerEmail   string `json:"email" sql:"customer_email"`
+	CustomerName    string `json:"name" sql:"column:customer_name"`
+	CustomerAddress string `json:"address" sql:"column:customer_address"`
+	CustomerPhone   string `json:"phone" sql:"column:customer_phone"`
+	CustomerEmail   string `json:"email" sql:"column:customer_email"`
 	CustomerNote    string `json:"note" sql:"column:note"`
 }
 
@@ -36,9 +37,9 @@ type Order struct {
 	AccessToken string `json:"access_token,omitempty"`
 	IsCheckout  bool   `json:"is_checkout"`
 
-	Items []OrderItem `json:"items" sql:"order_items"`
+	Items []OrderItem `json:"items" sql:"cart_items"`
 
-	OrderInfo `json:"-"`
+	OrderInfo `json:"-" sql:"-"`
 
 	Amounts Amount `json:"amounts" sql:"-"`
 
@@ -55,7 +56,7 @@ type OrderStatusLog struct {
 
 type OrderItem struct {
 	Id                       uint    `json:"id" sql:"id"`
-	OrderId                  uint    `json:"-" sql:"REFERENCES Orders(id)"`
+	CartId                   uint    `json:"-" sql:"REFERENCES carts(id)"`
 	ProductId                uint    `json:"product_id" sql:"column:product_id"`
 	ProductName              string  `json:"name" sql:"column:name"`
 	ProductImageThumbnailUrl *string `json:"image_thumbnail_url" sql:"-"`
@@ -63,10 +64,19 @@ type OrderItem struct {
 	Quantity                 int     `json:"quantity"`
 }
 
+func (Order) TableName() string {
+	return "carts"
+}
+
+func (OrderItem) TableName() string {
+	return "cart_items"
+}
+
 func (order *Order) UpdateItems(product_id *uint, item_id *uint, quantity int, product_name string, product_price int) error {
 	for idx, item := range order.Items {
 		if product_id != nil {
 			if item.ProductId == *product_id {
+				// The item already in the list, add or subtract quantity
 				order.Items[idx].Quantity += quantity
 				if order.Items[idx].Quantity < 0 {
 					order.Items[idx].Quantity = 0
@@ -76,6 +86,8 @@ func (order *Order) UpdateItems(product_id *uint, item_id *uint, quantity int, p
 				return nil
 			}
 		}
+
+		// update quantity base on {product_id, quantity}
 		if item_id != nil {
 			if item.Id == *item_id {
 				order.Items[idx].Quantity = quantity
@@ -87,13 +99,14 @@ func (order *Order) UpdateItems(product_id *uint, item_id *uint, quantity int, p
 	}
 
 	if item_id != nil {
-		return errors.New("Item ID not found")
+		return fmt.Errorf("Item ID %v not found", item_id)
 	}
 
 	if quantity < 0 {
 		return errors.New("Quantity for item should bigger than 0")
 	}
 
+	// The item is new, add it to the []item list {product_id, quantity}
 	if product_id != nil {
 		order.Items = append(order.Items,
 			OrderItem{
