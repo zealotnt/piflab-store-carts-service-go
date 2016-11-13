@@ -36,7 +36,7 @@ func (form *CartForm) FieldMap(req *http.Request) binding.FieldMap {
 }
 
 func (form *CartForm) Validate(method string, app ...*App) error {
-	var order = new(Order)
+	var order = new(Cart)
 	var err error
 
 	if method == "GET" {
@@ -46,7 +46,7 @@ func (form *CartForm) Validate(method string, app ...*App) error {
 
 		// If use GET method, the user must provide app interface
 		// Get order info based on AccessToken
-		if order, err = (OrderRepository{app[0].DB}).GetOrder(*form.AccessToken); err != nil {
+		if order, err = (CartRepository{app[0].DB}).GetCart(*form.AccessToken); err != nil {
 			if err.Error() == "record not found" {
 				return errors.New("Access Token is invalid")
 			}
@@ -57,14 +57,14 @@ func (form *CartForm) Validate(method string, app ...*App) error {
 
 		// TODO: need to check order.IsCheckout instead
 		if order.IsCheckout == true {
-			return errors.New("Order is in already checkout, please create another order")
+			return errors.New("Cart is in already checkout, please create another order")
 		}
 	}
 
 	if method == "PUT_CART" {
 		// PUT_CART can be nil access_token, this may be a create cart request
 		if form.AccessToken != nil {
-			if _, err = (OrderRepository{app[0].DB}).GetOrder(*form.AccessToken); err != nil {
+			if _, err = (CartRepository{app[0].DB}).GetCart(*form.AccessToken); err != nil {
 				if err.Error() == "record not found" {
 					return errors.New("Access Token is invalid")
 				}
@@ -99,7 +99,7 @@ func (form *CartForm) Validate(method string, app ...*App) error {
 		if form.AccessToken == nil {
 			return errors.New("Access Token is required")
 		}
-		if _, err = (OrderRepository{app[0].DB}).GetOrder(*form.AccessToken); err != nil {
+		if _, err = (CartRepository{app[0].DB}).GetCart(*form.AccessToken); err != nil {
 			if err.Error() == "record not found" {
 				return errors.New("Access Token is invalid")
 			}
@@ -128,15 +128,15 @@ func (form *CartForm) GetProductInfo(product_id *uint, item_id *uint) (product_n
 	return "", 0
 }
 
-func (form *CartForm) Order(app *App, item_id ...uint) (*Order, error) {
-	var order = new(Order)
+func (form *CartForm) Cart(app *App, item_id ...uint) (*Cart, error) {
+	var order = new(Cart)
 	var err error
 	var product_name string
 	var product_price uint
 
 	if form.AccessToken != nil {
 		// Get order info based on AccessToken
-		if order, err = (OrderRepository{app.DB}).GetOrder(*form.AccessToken); err != nil {
+		if order, err = (CartRepository{app.DB}).GetCart(*form.AccessToken); err != nil {
 			if err.Error() == "record not found" {
 				return order, errors.New("Access Token is invalid")
 			}
@@ -167,7 +167,7 @@ func (form *CartForm) Order(app *App, item_id ...uint) (*Order, error) {
 	// }
 
 	// if order.Status != "cart" {
-	// 	return order, errors.New("Order is in " + order.Status + " state, please use another cart")
+	// 	return order, errors.New("Cart is in " + order.Status + " state, please use another cart")
 	// }
 
 	return order, err

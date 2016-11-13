@@ -73,11 +73,11 @@ func (form *CheckoutCartForm) Validate() error {
 	return nil
 }
 
-func (form *CheckoutCartForm) Order(app *App) (*Order, error) {
-	var order = new(Order)
+func (form *CheckoutCartForm) Cart(app *App) (*Cart, error) {
+	var order = new(Cart)
 	var err error
 
-	if order, err = (OrderRepository{app.DB}).GetOrder(*form.AccessToken); err != nil {
+	if order, err = (CartRepository{app.DB}).GetCart(*form.AccessToken); err != nil {
 		if err.Error() == "record not found" {
 			return order, errors.New("Access Token is invalid")
 		}
@@ -88,7 +88,7 @@ func (form *CheckoutCartForm) Order(app *App) (*Order, error) {
 
 	// TODO: need to check order.IsCheckout instead
 	if order.IsCheckout == true {
-		return order, errors.New("Order is already checked out, please use another order")
+		return order, errors.New("Cart is already checked out, please use another order")
 	}
 
 	order.OrderInfo.CustomerName = *form.CustomerName
