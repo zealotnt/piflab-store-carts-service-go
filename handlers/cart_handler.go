@@ -72,7 +72,7 @@ func UpdateCartItemHandler(app *App) HandlerFunc {
 			JSON(w, err, 400)
 		}
 
-		if err := form.Validate("PUT_ITEM"); err != nil {
+		if err := form.Validate("PUT_ITEM", app); err != nil {
 			JSON(w, err, 422)
 			return
 		}
