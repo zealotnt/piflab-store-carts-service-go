@@ -120,6 +120,15 @@ func (cart *Cart) UpdateItems(product_id *uint, item_id *uint, quantity int, pro
 	return nil
 }
 
+func (cart *Cart) GetProductId(item_id uint) uint {
+	for _, item := range cart.Items {
+		if item.Id == item_id {
+			return item.ProductId
+		}
+	}
+	return 0
+}
+
 func (cart *Cart) CalculateAmount() {
 	for _, item := range cart.Items {
 		cart.Amounts.Subtotal += uint(item.ProductPrice) * uint(item.Quantity)

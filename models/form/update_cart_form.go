@@ -36,7 +36,7 @@ func (form *CartForm) FieldMap(req *http.Request) binding.FieldMap {
 }
 
 func (form *CartForm) Validate(method string, app ...*App) error {
-	var order = new(Cart)
+	var cart = new(Cart)
 	var err error
 
 	if method == "GET" {
@@ -45,8 +45,8 @@ func (form *CartForm) Validate(method string, app ...*App) error {
 		}
 
 		// If use GET method, the user must provide app interface
-		// Get order info based on AccessToken
-		if order, err = (CartRepository{app[0].DB}).GetCart(*form.AccessToken); err != nil {
+		// Get cart info based on AccessToken
+		if cart, err = (CartRepository{app[0].DB}).GetCart(*form.AccessToken); err != nil {
 			if err.Error() == "record not found" {
 				return errors.New("Access Token is invalid")
 			}
@@ -55,9 +55,9 @@ func (form *CartForm) Validate(method string, app ...*App) error {
 			return err
 		}
 
-		// TODO: need to check order.IsCheckout instead
-		if order.IsCheckout == true {
-			return errors.New("Cart is in already checkout, please create another order")
+		// TODO: need to check cart.IsCheckout instead
+		if cart.IsCheckout == true {
+			return errors.New("Cart is in already checkout, please create another cart")
 		}
 	}
 
@@ -124,51 +124,61 @@ func (form *CartForm) Validate(method string, app ...*App) error {
 	return nil
 }
 
-func (form *CartForm) GetProductInfo(product_id *uint, item_id *uint) (product_name string, product_price uint) {
-	return "", 0
+func (form *CartForm) GetProductInfo(app *App, product_id uint) (product_name string, product_price int, err error) {
+	product, _ := (ProductRepository{app}).FindById(product_id)
+	if product == nil {
+		return "", 0, fmt.Errorf("Product Id %v not found", product_id)
+	}
+	return product.Name, product.Price, nil
 }
 
 func (form *CartForm) Cart(app *App, item_id ...uint) (*Cart, error) {
-	var order = new(Cart)
+	var cart = new(Cart)
 	var err error
 	var product_name string
-	var product_price uint
+	var product_price int
 
 	if form.AccessToken != nil {
-		// Get order info based on AccessToken
-		if order, err = (CartRepository{app.DB}).GetCart(*form.AccessToken); err != nil {
+		// Get cart info based on AccessToken
+		if cart, err = (CartRepository{app.DB}).GetCart(*form.AccessToken); err != nil {
 			if err.Error() == "record not found" {
-				return order, errors.New("Access Token is invalid")
+				return cart, errors.New("Access Token is invalid")
 			}
 
 			// unknown err, return anyway
-			return order, err
+			return cart, err
 		}
 	}
 
 	// DELETE method should not update
 	if form.Product_Id != nil && form.Quantity != nil {
-		product_name, product_price = form.GetProductInfo(form.Product_Id, nil)
-		err = order.UpdateItems(form.Product_Id, nil, *form.Quantity, product_name, int(product_price))
+		product_name, product_price, err = form.GetProductInfo(app, *form.Product_Id)
+		if err != nil {
+			return nil, err
+		}
+		err = cart.UpdateItems(form.Product_Id, nil, *form.Quantity, product_name, product_price)
 	}
 
 	// PUT CartItem, should retrieve ProductId based on ItemId
 	if form.Product_Id == nil && form.Quantity != nil {
-		product_name, product_price = form.GetProductInfo(nil, &item_id[0])
-		err = order.UpdateItems(nil, &item_id[0], *form.Quantity, product_name, int(product_price))
+		product_name, product_price, err = form.GetProductInfo(app, cart.GetProductId(item_id[0]))
+		if err != nil {
+			return nil, err
+		}
+		err = cart.UpdateItems(nil, &item_id[0], *form.Quantity, product_name, product_price)
 	}
 
-	// If this is the first time create order,
-	// this will avoid error when create order
-	// (pq: invalid input value for enum order_status: "")
+	// If this is the first time create cart,
+	// this will avoid error when create cart
+	// (pq: invalid input value for enum cart_status: "")
 	// Note: Need to implement
-	// if order.Status == "" {
-	// 	order.Status = "cart"
+	// if cart.Status == "" {
+	// 	cart.Status = "cart"
 	// }
 
-	// if order.Status != "cart" {
-	// 	return order, errors.New("Cart is in " + order.Status + " state, please use another cart")
+	// if cart.Status != "cart" {
+	// 	return cart, errors.New("Cart is in " + cart.Status + " state, please use another cart")
 	// }
 
-	return order, err
+	return cart, err
 }
