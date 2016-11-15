@@ -77,7 +77,7 @@ func (form *CartForm) Validate(method string, app ...*App) error {
 		if form.Product_Id == nil {
 			return errors.New("No Product selected")
 		}
-		if _, err := (ProductRepository{app[0]}).FindById(*form.Product_Id); err != nil {
+		if _, err := (ProductRepository{}).FindById(*form.Product_Id); err != nil {
 			return fmt.Errorf("Product Id %v not found", *form.Product_Id)
 		}
 
@@ -124,8 +124,8 @@ func (form *CartForm) Validate(method string, app ...*App) error {
 	return nil
 }
 
-func (form *CartForm) GetProductInfo(app *App, product_id uint) (product_name string, product_price int, err error) {
-	product, _ := (ProductRepository{app}).FindById(product_id)
+func (form *CartForm) GetProductInfo(product_id uint) (product_name string, product_price int, err error) {
+	product, _ := (ProductRepository{}).FindById(product_id)
 	if product == nil {
 		return "", 0, fmt.Errorf("Product Id %v not found", product_id)
 	}
@@ -152,7 +152,7 @@ func (form *CartForm) Cart(app *App, item_id ...uint) (*Cart, error) {
 
 	// DELETE method should not update
 	if form.Product_Id != nil && form.Quantity != nil {
-		product_name, product_price, err = form.GetProductInfo(app, *form.Product_Id)
+		product_name, product_price, err = form.GetProductInfo(*form.Product_Id)
 		if err != nil {
 			return nil, err
 		}
@@ -161,24 +161,20 @@ func (form *CartForm) Cart(app *App, item_id ...uint) (*Cart, error) {
 
 	// PUT CartItem, should retrieve ProductId based on ItemId
 	if form.Product_Id == nil && form.Quantity != nil {
-		product_name, product_price, err = form.GetProductInfo(app, cart.GetProductId(item_id[0]))
+		product_id := cart.GetProductId(item_id[0])
+		if product_id == 0 {
+			return nil, fmt.Errorf("Item id %v not found", item_id[0])
+		}
+		product_name, product_price, err = form.GetProductInfo(product_id)
 		if err != nil {
 			return nil, err
 		}
 		err = cart.UpdateItems(nil, &item_id[0], *form.Quantity, product_name, product_price)
 	}
 
-	// If this is the first time create cart,
-	// this will avoid error when create cart
-	// (pq: invalid input value for enum cart_status: "")
-	// Note: Need to implement
-	// if cart.Status == "" {
-	// 	cart.Status = "cart"
-	// }
-
-	// if cart.Status != "cart" {
-	// 	return cart, errors.New("Cart is in " + cart.Status + " state, please use another cart")
-	// }
+	if cart.IsCheckout == true {
+		return cart, errors.New("Cart is already checkout, please create another cart")
+	}
 
 	return cart, err
 }

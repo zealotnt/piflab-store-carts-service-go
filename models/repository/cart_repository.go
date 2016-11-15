@@ -7,12 +7,38 @@ import (
 
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/rand"
 	"time"
 )
 
 type CartRepository struct {
 	*DB
+}
+
+func (repo CartRepository) getOrderItemsInfo(order_items []CartItem, get_product_price_name bool) error {
+	for idx, item := range order_items {
+		product := &Product{}
+		var err error
+
+		product.Id = item.ProductId
+		product, err = (ProductRepository{}).FindById(product.Id)
+		if err != nil {
+			return fmt.Errorf("Product %v", err)
+		}
+
+		// This option is for cart/checkout
+		// + when cart, we will update the product price and name whenever there is a change
+		// + when checkout, we will not fetch the product price and name, it is stored in the order's db table
+		if get_product_price_name == true {
+			order_items[idx].ProductPrice = product.Price
+			order_items[idx].ProductName = product.Name
+		}
+
+		order_items[idx].ProductImageThumbnailUrl = product.ImageThumbnailUrl
+	}
+
+	return nil
 }
 
 func (repo CartRepository) generateAccessToken(cart *Cart) error {
@@ -45,6 +71,10 @@ func (repo CartRepository) createCart(cart *Cart) error {
 		return err
 	}
 
+	if err := repo.getOrderItemsInfo(cart.Items, true); err != nil {
+		return err
+	}
+
 	if err := repo.DB.Create(cart).Error; err != nil {
 		return err
 	}
@@ -54,6 +84,11 @@ func (repo CartRepository) createCart(cart *Cart) error {
 
 func (repo CartRepository) updateCart(cart *Cart) error {
 	tx := repo.DB.Begin()
+
+	if err := repo.getOrderItemsInfo(cart.Items, true); err != nil {
+		tx.Rollback()
+		return err
+	}
 
 	// Update the cart
 	if err := tx.Save(cart).Error; err != nil {
@@ -70,48 +105,6 @@ func (repo CartRepository) updateCart(cart *Cart) error {
 	cart.EraseAccessToken()
 
 	return nil
-}
-
-func (repo CartRepository) FindByOrderId(cart_code string) (*Cart, error) {
-	cart := &Cart{}
-	items := &[]CartItem{}
-
-	// find a cart by its access_token
-	if err := repo.DB.Where("code = ?", cart_code).Find(cart).Error; err != nil {
-		return nil, err
-	}
-
-	// use cart.Id to find its CartItem data (cart.Id is its forein key)
-	if err := repo.DB.Where("cart_id = ?", cart.Id).Find(items).Error; err != nil {
-		return nil, err
-	}
-
-	// use the cart.Items to update products information
-	cart.Items = *items
-
-	return cart, nil
-}
-
-func (repo CartRepository) GetOrderByOrdercode(cart_code string) (*Cart, error) {
-	// TODO: Call Order_Service_API
-	// cart := &Cart{}
-	// items := &[]CartItem{}
-
-	// // find a cart by its cart_code
-	// if err := repo.DB.Where("code = ?", cart_code).Find(cart).Error; err != nil {
-	// 	return nil, err
-	// }
-
-	// // use cart.Id to find its CartItem data (cart.Id is its forein key)
-	// if err := repo.DB.Where("cart_id = ?", cart.Id).Find(items).Error; err != nil {
-	// 	return nil, err
-	// }
-
-	// // use the cart.Items to update products information
-	// cart.Items = *items
-
-	// return cart, nil
-	return nil, nil
 }
 
 func (repo CartRepository) GetCart(access_token string) (*Cart, error) {
@@ -131,6 +124,8 @@ func (repo CartRepository) GetCart(access_token string) (*Cart, error) {
 	// use the cart.Items to update products information
 	cart.Items = *items
 
+	repo.getOrderItemsInfo(cart.Items, true)
+
 	return cart, nil
 }
 
@@ -143,6 +138,8 @@ func (repo CartRepository) SaveCart(cart *Cart) error {
 
 func (repo CartRepository) DeleteCartItem(cart *Cart, item_id uint) error {
 	item := CartItem{}
+
+	repo.getOrderItemsInfo(cart.Items, true)
 
 	// use cart.Id to find its CartItem data (cart.Id is its forein key)
 	if err := repo.DB.Where("id = ? AND cart_id = ?", item_id, cart.Id).Find(&item).Error; err != nil {

@@ -9,12 +9,11 @@ import (
 )
 
 type ProductRepository struct {
-	*App
 }
 
 func (repo ProductRepository) FindById(id uint) (*Product, error) {
 	product := &Product{}
-	response, body := HttpRequest("GET", repo.PRODUCT_SERVICE+"/products/"+strconv.Itoa(int(id)), nil)
+	response, body := HttpRequest("GET", GetProductService()+"/products/"+strconv.Itoa(int(id)), nil)
 	if response.Status != "200 OK" {
 		return nil, ParseError(body)
 	}
@@ -30,7 +29,7 @@ func (repo ProductRepository) GetPage(offset uint, limit uint, search string) (*
 	product_by_page := &ProductPage{}
 
 	response, body := HttpRequest("GET",
-		repo.PRODUCT_SERVICE+"/products?offset="+
+		GetProductService()+"/products?offset="+
 			strconv.Itoa(int(offset))+
 			"&limit="+strconv.Itoa(int(limit))+
 			"&q="+search,
@@ -48,7 +47,7 @@ func (repo ProductRepository) GetPage(offset uint, limit uint, search string) (*
 
 func (repo ProductRepository) createProduct(product *Product) error {
 	response, body := HttpRequest("POST",
-		repo.PRODUCT_SERVICE+"/products",
+		GetProductService()+"/products",
 		product)
 	if response.Status != "201 Created" {
 		return ParseError(body)
@@ -62,7 +61,7 @@ func (repo ProductRepository) createProduct(product *Product) error {
 
 func (repo ProductRepository) updateProduct(product *Product) error {
 	response, body := HttpRequest("PUT",
-		repo.PRODUCT_SERVICE+"/products/"+strconv.Itoa(int(product.Id)),
+		GetProductService()+"/products/"+strconv.Itoa(int(product.Id)),
 		product)
 	if response.Status != "200 OK" {
 		return ParseError(body)
@@ -88,7 +87,7 @@ func (repo ProductRepository) DeleteProduct(id uint) (*Product, error) {
 	if err != nil {
 		return product, err
 	}
-	response, body := HttpRequest("DELETE", repo.PRODUCT_SERVICE+"/products/"+strconv.Itoa(int(id)), "")
+	response, body := HttpRequest("DELETE", GetProductService()+"/products/"+strconv.Itoa(int(id)), "")
 	if response.Status != "200 OK" {
 		return nil, ParseError(body)
 	}
