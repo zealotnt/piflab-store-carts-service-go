@@ -170,5 +170,8 @@ func (repo CartRepository) DeleteCartItem(cart *Cart, item_id uint) error {
 
 func (repo CartRepository) CheckoutCart(cart *Cart) error {
 	// TODO: Call ORERS_SERVICE_API
+
+	// TODO: if success, save the new status IsCheckout to true and save to db
+
 	return nil
 }
