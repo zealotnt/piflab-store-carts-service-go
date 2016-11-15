@@ -5,6 +5,7 @@ import (
 	. "github.com/o0khoiclub0o/piflab-store-api-go/lib"
 	. "github.com/o0khoiclub0o/piflab-store-api-go/models"
 
+	"encoding/json"
 	"errors"
 	"math/rand"
 	"time"
@@ -43,12 +44,6 @@ func (repo CartRepository) createCart(cart *Cart) error {
 	if err := repo.generateAccessToken(cart); err != nil {
 		return err
 	}
-
-	// cart.Items[0].Id = 1
-	// cart.Items[0].OrderId = 1
-	// cart.Items[0].ProductName = "abc"
-	// cart.Items[0].ProductPrice = 123
-	PR_DUMP(cart)
 
 	if err := repo.DB.Create(cart).Error; err != nil {
 		return err
@@ -168,10 +163,43 @@ func (repo CartRepository) DeleteCartItem(cart *Cart, item_id uint) error {
 	return nil
 }
 
-func (repo CartRepository) CheckoutCart(cart *Cart) error {
-	// TODO: Call ORERS_SERVICE_API
+func (repo CartRepository) CheckoutCart(cart *Cart) (checkout *CheckoutReturn, err error) {
+	type CheckoutCartForm struct {
+		AccessToken     string     `json:"access_token"`
+		Items           []CartItem `json:"items,omitempty"`
+		CustomerName    string     `json:"name"`
+		CustomerAddress string     `json:"address"`
+		CustomerPhone   string     `json:"phone"`
+		CustomerEmail   string     `json:"email"`
+		CustomerNote    string     `json:"note"`
+	}
 
-	// TODO: if success, save the new status IsCheckout to true and save to db
+	form := CheckoutCartForm{
+		AccessToken:     cart.AccessToken,
+		Items:           cart.Items,
+		CustomerName:    cart.CustomerName,
+		CustomerAddress: cart.CustomerAddress,
+		CustomerPhone:   cart.CustomerPhone,
+		CustomerEmail:   cart.CustomerEmail,
+		CustomerNote:    cart.CustomerNote,
+	}
+	var ret = new(CheckoutReturn)
 
-	return nil
+	// Call ORERS_SERVICE_API
+	response, body := HttpRequest("POST",
+		GetOrderService()+"/cart/checkout",
+		form)
+	if response.Status != "200 OK" {
+		return nil, ParseError(body)
+	}
+
+	if err := json.Unmarshal([]byte(body), ret); err != nil {
+		return nil, err
+	}
+
+	// If success, save the new status IsCheckout to true and save to db
+	cart.IsCheckout = true
+	repo.DB.Save(cart)
+
+	return ret, nil
 }

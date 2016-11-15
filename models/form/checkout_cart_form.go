@@ -88,7 +88,7 @@ func (form *CheckoutCartForm) Cart(app *App) (*Cart, error) {
 
 	// TODO: need to check order.IsCheckout instead
 	if order.IsCheckout == true {
-		return order, errors.New("Cart is already checked out, please use another order")
+		return order, errors.New("Cart is already checked out, please create another cart")
 	}
 
 	order.OrderInfo.CustomerName = *form.CustomerName

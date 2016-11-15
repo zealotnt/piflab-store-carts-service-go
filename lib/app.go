@@ -96,12 +96,12 @@ func NewApp() *App {
 		PORT:   getPort(),
 		ENV:    getEnv(),
 
-		PRODUCT_SERVICE: getProductService(),
-		ORDER_SERVICE:   getOrderService(),
+		PRODUCT_SERVICE: GetProductService(),
+		ORDER_SERVICE:   GetOrderService(),
 	}
 }
 
-func getProductService() string {
+func GetProductService() string {
 	env := os.Getenv("PRODUCT_SERVICE_URL")
 
 	if env == "" {
@@ -111,7 +111,7 @@ func getProductService() string {
 	return env
 }
 
-func getOrderService() string {
+func GetOrderService() string {
 	env := os.Getenv("ORDER_SERVICE_URL")
 
 	if env == "" {

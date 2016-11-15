@@ -146,14 +146,13 @@ func CheckoutCartHandler(app *App) HandlerFunc {
 			return
 		}
 
-		if err := (CartRepository{app.DB}).CheckoutCart(cart); err != nil {
+		ret, err := (CartRepository{app.DB}).CheckoutCart(cart)
+		if err != nil {
 			JSON(w, err, 500)
 			return
 		}
 
-		// TODO: Implement return the response of Order_service_api
-		// cart.CalculateAmount()
-		// ret := cart.ReturnCheckoutRequest()
-		// JSON(w, ret)
+		// Forward to checkout return from orders service
+		JSON(w, ret)
 	}
 }
