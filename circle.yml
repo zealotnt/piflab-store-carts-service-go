@@ -4,6 +4,9 @@ machine:
     FULL_IMPORT_PATH: "`echo $GOPATH | cut -d: -f1`/src/$IMPORT_PATH"
     DATABASE_URL: "postgres://root:@127.0.0.1:5432/circle_test"
     COVERALLS_TOKEN: ZFTjZRukTuUW6YITt9SCXkfQBowmjGFw4
+    PRODUCT_SERVICE_URL: "http://products:9901"
+    ORDER_SERVICE_URL: "http://orders:9902"
+    PORT: "9903"
   services:
     - mysql
 dependencies:
