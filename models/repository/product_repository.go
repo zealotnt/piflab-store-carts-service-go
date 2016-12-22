@@ -5,10 +5,28 @@ import (
 	. "github.com/o0khoiclub0o/piflab-store-api-go/models"
 
 	"encoding/json"
+	"fmt"
 	"strconv"
+	"strings"
 )
 
 type ProductRepository struct {
+}
+
+func (repo ProductRepository) FindByListId(ids []uint64) (*ProductListId, error) {
+	product_list := &ProductListId{}
+
+	product_ids := strings.Trim(strings.Replace(fmt.Sprint(ids), " ", ",", -1), "[]")
+	response, body := HttpRequest("GET", GetProductService()+"/products/"+product_ids, nil)
+	if response.Status != "200 OK" {
+		return nil, ParseError(body)
+	}
+
+	if err := json.Unmarshal([]byte(body), &product_list); err != nil {
+		return nil, err
+	}
+
+	return product_list, nil
 }
 
 func (repo ProductRepository) FindById(id uint) (*Product, error) {

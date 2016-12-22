@@ -27,6 +27,11 @@ type Product struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type ProductListId struct {
+	ProductSlice `json:"data,omitempty"`
+	Error        string `json:"error,omitempty"`
+}
+
 type ProductSlice []Product
 
 type PageUrl struct {
