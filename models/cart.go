@@ -32,6 +32,11 @@ type CheckoutReturn struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type Alert struct {
+	Type    string
+	Message string
+}
+
 type Cart struct {
 	Id          uint   `json:"-"`
 	AccessToken string `json:"access_token,omitempty"`
@@ -42,6 +47,8 @@ type Cart struct {
 	OrderInfo `json:"-" sql:"-"`
 
 	Amounts Amount `json:"amounts" sql:"-"`
+
+	Alerts []Alert `json:"alerts,omitempty" sql:"-"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

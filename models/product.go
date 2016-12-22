@@ -30,6 +30,8 @@ type Product struct {
 type ProductListId struct {
 	ProductSlice `json:"data,omitempty"`
 	Error        string `json:"error,omitempty"`
+
+	ErrorList []uint64 `json:"-"`
 }
 
 type ProductSlice []Product

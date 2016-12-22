@@ -26,6 +26,13 @@ func (repo ProductRepository) FindByListId(ids []uint64) (*ProductListId, error)
 		return nil, err
 	}
 
+	// Try to parse missing product ids by comma seperated list
+	str_list := strings.Split(product_list.Error, ",")
+	for _, str := range str_list {
+		id, _ := strconv.ParseUint(str, 10, 32)
+		product_list.ErrorList = append(product_list.ErrorList, id)
+	}
+
 	return product_list, nil
 }
 
