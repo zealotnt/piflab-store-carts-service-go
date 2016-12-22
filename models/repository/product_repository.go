@@ -5,6 +5,7 @@ import (
 	. "github.com/o0khoiclub0o/piflab-store-api-go/models"
 
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -15,22 +16,39 @@ type ProductRepository struct {
 
 func (repo ProductRepository) FindByListId(ids []uint64) (*ProductListId, error) {
 	product_list := &ProductListId{}
-
-	product_ids := strings.Trim(strings.Replace(fmt.Sprint(ids), " ", ",", -1), "[]")
-	response, body := HttpRequest("GET", GetProductService()+"/products/"+product_ids, nil)
-	if response.Status != "200 OK" {
-		return nil, ParseError(body)
+	if len(ids) == 0 {
+		return nil, errors.New("ids array null")
 	}
-
-	if err := json.Unmarshal([]byte(body), &product_list); err != nil {
-		return nil, err
+	if len(ids) == 1 {
+		product, err := repo.FindById(uint(ids[0]))
+		if err != nil {
+			if err.Error() == "record not found" {
+				product_list.ErrorList = append(product_list.ErrorList, ids[0])
+				return product_list, nil
+			}
+			return nil, err
+		}
+		product_list.ProductSlice = append(product_list.ProductSlice, *product)
 	}
+	if len(ids) > 1 {
+		product_ids := strings.Trim(strings.Replace(fmt.Sprint(ids), " ", ",", -1), "[]")
+		response, body := HttpRequest("GET", GetProductService()+"/products/"+product_ids, nil)
+		if response.Status != "200 OK" {
+			return nil, ParseError(body)
+		}
 
-	// Try to parse missing product ids by comma seperated list
-	str_list := strings.Split(product_list.Error, ",")
-	for _, str := range str_list {
-		id, _ := strconv.ParseUint(str, 10, 32)
-		product_list.ErrorList = append(product_list.ErrorList, id)
+		if err := json.Unmarshal([]byte(body), &product_list); err != nil {
+			return nil, err
+		}
+
+		// Try to parse missing product ids by comma seperated list
+		if product_list.Error != nil {
+			str_list := strings.Split(*product_list.Error, ",")
+			for _, str := range str_list {
+				id, _ := strconv.ParseUint(str, 10, 32)
+				product_list.ErrorList = append(product_list.ErrorList, id)
+			}
+		}
 	}
 
 	return product_list, nil

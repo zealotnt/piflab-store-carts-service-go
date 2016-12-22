@@ -74,31 +74,31 @@ func (form *CheckoutCartForm) Validate() error {
 }
 
 func (form *CheckoutCartForm) Cart(app *App) (*Cart, error) {
-	var order = new(Cart)
+	var cart = new(Cart)
 	var err error
 
-	if order, err = (CartRepository{app.DB}).GetCart(*form.AccessToken); err != nil {
+	if cart, err = (CartRepository{app.DB}).GetCart(*form.AccessToken); err != nil {
 		if err.Error() == "record not found" {
-			return order, errors.New("Access Token is invalid")
+			return cart, errors.New("Access Token is invalid")
 		}
 
 		// unknown err, return anyway
-		return order, err
+		return cart, err
 	}
 
-	// TODO: need to check order.IsCheckout instead
-	if order.IsCheckout == true {
-		return order, errors.New("Cart is already checked out, please create another cart")
+	// TODO: need to check cart.IsCheckout instead
+	if cart.IsCheckout == true {
+		return cart, errors.New("Cart is already checked out, please create another cart")
 	}
 
-	order.OrderInfo.CustomerName = *form.CustomerName
-	order.OrderInfo.CustomerAddress = *form.CustomerAddress
-	order.OrderInfo.CustomerPhone = *form.CustomerPhone
-	order.OrderInfo.CustomerEmail = *form.CustomerEmail
+	cart.OrderInfo.CustomerName = *form.CustomerName
+	cart.OrderInfo.CustomerAddress = *form.CustomerAddress
+	cart.OrderInfo.CustomerPhone = *form.CustomerPhone
+	cart.OrderInfo.CustomerEmail = *form.CustomerEmail
 
 	if form.CustomerNote != nil {
-		order.OrderInfo.CustomerNote = *form.CustomerNote
+		cart.OrderInfo.CustomerNote = *form.CustomerNote
 	}
 
-	return order, err
+	return cart, err
 }

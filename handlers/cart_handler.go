@@ -146,6 +146,21 @@ func CheckoutCartHandler(app *App) HandlerFunc {
 			return
 		}
 
+		// if cart has error, user must delete cart items until there is no error
+		if cart.IsError == true {
+			JSON(w, cart)
+			return
+		}
+
+		// if cart has warning, save the diff to db, return warning to user
+		// the checkout will be process in the next checkout click
+		if cart.IsWarning == true {
+			UpdateCartItemsNamePrice(cart)
+			(CartRepository{app.DB}).SaveCart(cart)
+			JSON(w, cart)
+			return
+		}
+
 		ret, err := (CartRepository{app.DB}).CheckoutCart(cart)
 		if err != nil {
 			JSON(w, err, 500)

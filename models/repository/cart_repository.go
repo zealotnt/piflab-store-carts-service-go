@@ -16,6 +16,17 @@ type CartRepository struct {
 	*DB
 }
 
+func UpdateCartItemsNamePrice(cart *Cart) {
+	for idx, order := range cart.Items {
+		for _, product := range cart.ProductList.ProductSlice {
+			if order.ProductId == product.Id {
+				cart.Items[idx].ProductName = product.Name
+				cart.Items[idx].ProductPrice = product.Price
+			}
+		}
+	}
+}
+
 func SetCartItemsThumnailUrl(cart_items []CartItem, product_list ProductListId) {
 	for idx, order := range cart_items {
 		for _, product := range product_list.ProductSlice {
@@ -26,17 +37,20 @@ func SetCartItemsThumnailUrl(cart_items []CartItem, product_list ProductListId) 
 	}
 }
 
-func GetCartAlerts(cart *Cart, product_list ProductListId) (IsWarning bool, IsError bool) {
-	var is_warning bool
-	var is_error bool
+func GetCartAlerts(cart *Cart, product_list ProductListId) {
+	// clear old array
+	cart.Alerts = nil
 
 	// check for product deleted
 	for _, id := range product_list.ErrorList {
-		is_error = true
+		cart.IsError = true
 
 		cart.Alerts = append(cart.Alerts,
 			Alert{Type: "error",
-				Message: fmt.Sprintf("Product id %d is deleted", id),
+				Message: fmt.Sprintf("Product id %d '%s' is deleted, should remove item_id %d to be able to checkout",
+					id,
+					cart.GetProductName(uint(id)),
+					cart.GetItemId(uint(id))),
 			})
 	}
 
@@ -45,7 +59,7 @@ func GetCartAlerts(cart *Cart, product_list ProductListId) (IsWarning bool, IsEr
 		for _, product := range product_list.ProductSlice {
 			if order.ProductId == product.Id {
 				if cart.Items[idx].ProductPrice != product.Price {
-					is_warning = true
+					cart.IsWarning = true
 
 					cart.Alerts = append(cart.Alerts,
 						Alert{Type: "warning",
@@ -56,7 +70,7 @@ func GetCartAlerts(cart *Cart, product_list ProductListId) (IsWarning bool, IsEr
 						})
 				}
 				if cart.Items[idx].ProductName != product.Name {
-					is_warning = true
+					cart.IsWarning = true
 
 					cart.Alerts = append(cart.Alerts,
 						Alert{Type: "warning",
@@ -69,25 +83,26 @@ func GetCartAlerts(cart *Cart, product_list ProductListId) (IsWarning bool, IsEr
 			}
 		}
 	}
-
-	return is_warning, is_error
 }
 
-func GetCartItemsInfo(cart_items []CartItem) (*ProductListId, error) {
+func GetProductList(cart *Cart) error {
 	var product_id_list []uint64
 
 	// Get the product list
-	for _, item := range cart_items {
+	for _, item := range cart.Items {
 		product_id_list = append(product_id_list, uint64(item.ProductId))
 	}
 
 	// request to product service
 	product_list, err := (ProductRepository{}).FindByListId(product_id_list)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return product_list, nil
+	// update to cart internal structure, for further investigate
+	cart.ProductList = *product_list
+
+	return nil
 }
 
 func (repo CartRepository) generateAccessToken(cart *Cart) error {
@@ -120,10 +135,6 @@ func (repo CartRepository) createCart(cart *Cart) error {
 		return err
 	}
 
-	if _, err := GetCartItemsInfo(cart.Items); err != nil {
-		return err
-	}
-
 	if err := repo.DB.Create(cart).Error; err != nil {
 		return err
 	}
@@ -133,11 +144,6 @@ func (repo CartRepository) createCart(cart *Cart) error {
 
 func (repo CartRepository) updateCart(cart *Cart) error {
 	tx := repo.DB.Begin()
-
-	if _, err := GetCartItemsInfo(cart.Items); err != nil {
-		tx.Rollback()
-		return err
-	}
 
 	// Update the cart
 	if err := tx.Save(cart).Error; err != nil {
@@ -173,14 +179,14 @@ func (repo CartRepository) GetCart(access_token string) (*Cart, error) {
 	// use the cart.Items to update products information
 	cart.Items = *items
 
-	product_list, err := GetCartItemsInfo(cart.Items)
+	err := GetProductList(cart)
 	if err != nil {
 		return nil, err
 	}
 
-	GetCartAlerts(cart, *product_list)
+	GetCartAlerts(cart, cart.ProductList)
 
-	SetCartItemsThumnailUrl(cart.Items, *product_list)
+	SetCartItemsThumnailUrl(cart.Items, cart.ProductList)
 
 	return cart, nil
 }
@@ -194,12 +200,6 @@ func (repo CartRepository) SaveCart(cart *Cart) error {
 
 func (repo CartRepository) DeleteCartItem(cart *Cart, item_id uint) error {
 	item := CartItem{}
-
-	product_list, err := GetCartItemsInfo(cart.Items)
-	if err != nil {
-		return err
-	}
-	GetCartAlerts(cart, *product_list)
 
 	// use cart.Id to find its CartItem data (cart.Id is its forein key)
 	if err := repo.DB.Where("id = ? AND cart_id = ?", item_id, cart.Id).Find(&item).Error; err != nil {
@@ -216,6 +216,13 @@ func (repo CartRepository) DeleteCartItem(cart *Cart, item_id uint) error {
 	items := &[]CartItem{}
 	repo.DB.Where("cart_id = ?", cart.Id).Find(items)
 	cart.Items = *items
+
+	// because there is a last delete cart item action, update the alert message
+	err := GetProductList(cart)
+	if err != nil {
+		return err
+	}
+	GetCartAlerts(cart, cart.ProductList)
 
 	return nil
 }

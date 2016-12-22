@@ -160,7 +160,7 @@ func (form *CartForm) Cart(app *App, item_id ...uint) (*Cart, error) {
 	}
 
 	// PUT CartItem, should retrieve ProductId based on ItemId
-	if form.Product_Id == nil && form.Quantity != nil {
+	if form.Product_Id == nil && form.Quantity != nil && item_id != nil {
 		product_id := cart.GetProductId(item_id[0])
 		if product_id == 0 {
 			return nil, fmt.Errorf("Item id %v not found", item_id[0])

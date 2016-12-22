@@ -48,7 +48,10 @@ type Cart struct {
 
 	Amounts Amount `json:"amounts" sql:"-"`
 
-	Alerts []Alert `json:"alerts,omitempty" sql:"-"`
+	ProductList ProductListId `json:"-" sql:"-"`
+	IsWarning   bool          `json:"-" sql:"-"`
+	IsError     bool          `json:"-" sql:"-"`
+	Alerts      []Alert       `json:"alerts,omitempty" sql:"-"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -125,6 +128,24 @@ func (cart *Cart) UpdateItems(product_id *uint, item_id *uint, quantity int, pro
 	}
 
 	return nil
+}
+
+func (cart *Cart) GetProductName(product_id uint) string {
+	for _, item := range cart.Items {
+		if item.ProductId == product_id {
+			return item.ProductName
+		}
+	}
+	return ""
+}
+
+func (cart *Cart) GetItemId(product_id uint) uint {
+	for _, item := range cart.Items {
+		if item.ProductId == product_id {
+			return item.Id
+		}
+	}
+	return 0
 }
 
 func (cart *Cart) GetProductId(item_id uint) uint {
