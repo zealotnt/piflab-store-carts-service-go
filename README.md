@@ -6,40 +6,21 @@
 http://docs.piflabstore.apiary.io/
 
 ## Dependencies
-
 - **GO 1.5**
 
 ## 3rd parties
 
 ## Framework
-
 - **Dependency**: [Godep](https://github.com/tools/godep)
 - **Router**: [Gorilla Mux](https://github.com/gorilla/mux)
 
-## Build Docker image
-
-`docker build -t piflab-store-api-go .`
-
-## Run a command inside container
-
-``docker run -v `pwd`:/go/src/github.com/o0khoiclub0o/piflab-store-api-go piflab-store-api-go <command you want to run>``
-
 ## Add package
-
-- ``docker run -it -v `pwd`:/go/src/github.com/o0khoiclub0o/piflab-store-api-go piflab-store-api-go bash``
 - `go get <package>`
 - `import "<package>"`
 - `godep save ./...`
 
-## Development
-
-``docker run -p 80:80 -v `pwd`:/go/src/github.com/o0khoiclub0o/piflab-store-api-go --env-file=.env --rm -it piflab-store-api-go bash``
-
-``docker run -p 80:80 -v `pwd`:/go/src/github.com/o0khoiclub0o/piflab-store-api-go --env-file=.env --rm  piflab-store-api-go gin -p 80 run``
-
 ## Testing
-
-``docker run -v `pwd`:/go/src/github.com/o0khoiclub0o/piflab-store-api-go piflab-store-api-go ginkgo -r``
+`./testcoverage.sh`
 
 ## Migration
 
@@ -49,14 +30,5 @@ http://docs.piflabstore.apiary.io/
 ### Rollback
 `goose down`
 
-### Seed
-`go run db/seeds/main.go`
-
-### Golang dump
-```
-import "github.com/davecgh/go-spew/spew"
-spew.Dump(structure_to_be_dump)
-```
-
-### Save package
-If use `godep save .` it will remove the pacakges that aren't used in source code (such as `ginkgo`, `gomega`, ...), so use `godep save ./...` save only (no remove).
+## Cart services structure
+[Cart service structure document](./docs/cart-services-structure.md)
