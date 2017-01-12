@@ -21,6 +21,10 @@
 			"Rev": "66312f7fe2678aa0f5ec770f96702f4c4ec5aa8e"
 		},
 		{
+			"ImportPath": "github.com/golang/protobuf/proto",
+			"Rev": "8ee79997227bf9b34611aee7946ae64735e6fd93"
+		},
+		{
 			"ImportPath": "github.com/gorilla/context",
 			"Rev": "215affda49addc4c8ef7e2534915df2c8c35c6cd"
 		},
@@ -214,6 +218,14 @@
 			"ImportPath": "github.com/parnurzeal/gorequest",
 			"Comment": "v0.2.14-15-ge30af16",
 			"Rev": "e30af16d4e485943aab0b0885ad6bdbb8c0d3dc7"
+		},
+		{
+			"ImportPath": "github.com/ttacon/builder",
+			"Rev": "7f152c3cf4714fd6318739f8f3dbcd14c2a18b39"
+		},
+		{
+			"ImportPath": "github.com/ttacon/libphonenumber",
+			"Rev": "7cae2148c8b6ea3d01e4b2e3f1cc9e7136bb1bcf"
 		},
 		{
 			"ImportPath": "golang.org/x/net/publicsuffix",

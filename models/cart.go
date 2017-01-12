@@ -65,7 +65,7 @@ type OrderStatusLog struct {
 }
 
 type CartItem struct {
-	Id                       uint    `json:"id" sql:"id"`
+	Id                       uint    `json:"id,string" sql:"id"`
 	CartId                   uint    `json:"-" sql:"REFERENCES Carts(id)"`
 	ProductId                uint    `json:"product_id" sql:"column:product_id"`
 	ProductName              string  `json:"name" sql:"column:name"`

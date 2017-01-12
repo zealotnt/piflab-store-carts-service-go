@@ -8,7 +8,26 @@ import (
 	"image/png"
 	"net/http"
 	"regexp"
+
+	"github.com/ttacon/libphonenumber"
 )
+
+var validation_result = map[libphonenumber.ValidationResult]string{
+	libphonenumber.IS_POSSIBLE:          "IS_POSSIBLE",
+	libphonenumber.INVALID_COUNTRY_CODE: "INVALID_COUNTRY_CODE",
+	libphonenumber.TOO_SHORT:            "TOO_SHORT",
+	libphonenumber.TOO_LONG:             "TOO_LONG",
+}
+
+func ValidatePhone(phone string) error {
+	num, _ := libphonenumber.Parse(phone, "VN")
+
+	if libphonenumber.IsPossibleNumberWithReason(num) != libphonenumber.IS_POSSIBLE {
+		return errors.New(validation_result[libphonenumber.IsPossibleNumberWithReason(num)])
+	}
+
+	return nil
+}
 
 func ValidateEmail(email string) bool {
 	Re := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
