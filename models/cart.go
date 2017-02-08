@@ -33,14 +33,14 @@ type CheckoutReturn struct {
 }
 
 type Alert struct {
-	Type    string
-	Message string
+	Type    string `json:"type"`
+	Message string `json:"message"`
 }
 
 type Cart struct {
 	Id          uint   `json:"-"`
 	AccessToken string `json:"access_token,omitempty"`
-	IsCheckout  bool   `json:"is_checkout"`
+	IsCheckout  bool   `json:"-"`
 
 	Items []CartItem `json:"items" sql:"cart_items"`
 

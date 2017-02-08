@@ -63,8 +63,8 @@ func GetCartAlerts(cart *Cart, product_list ProductListId) {
 
 					cart.Alerts = append(cart.Alerts,
 						Alert{Type: "warning",
-							Message: fmt.Sprintf("Product price of p_id %d changed, from %d to %d",
-								order.ProductId,
+							Message: fmt.Sprintf("Product price of \"%s\" changed, from %d to %d",
+								order.ProductName,
 								cart.Items[idx].ProductPrice,
 								product.Price),
 						})
