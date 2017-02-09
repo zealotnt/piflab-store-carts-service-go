@@ -14,9 +14,9 @@ import (
 
 var validation_result = map[libphonenumber.ValidationResult]string{
 	libphonenumber.IS_POSSIBLE:          "IS_POSSIBLE",
-	libphonenumber.INVALID_COUNTRY_CODE: "INVALID_COUNTRY_CODE",
-	libphonenumber.TOO_SHORT:            "TOO_SHORT",
-	libphonenumber.TOO_LONG:             "TOO_LONG",
+	libphonenumber.INVALID_COUNTRY_CODE: "has invalid country code",
+	libphonenumber.TOO_SHORT:            "is too short",
+	libphonenumber.TOO_LONG:             "is too long",
 }
 
 func ValidatePhone(phone string) error {
