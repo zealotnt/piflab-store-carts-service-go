@@ -47,10 +47,8 @@ func GetCartAlerts(cart *Cart, product_list ProductListId) {
 
 		cart.Alerts = append(cart.Alerts,
 			Alert{Type: "error",
-				Message: fmt.Sprintf("Product id %d '%s' is deleted, should remove item_id %d to be able to checkout",
-					id,
-					cart.GetProductName(uint(id)),
-					cart.GetItemId(uint(id))),
+				Message: fmt.Sprintf("Product \"%s\" is not available",
+					cart.GetProductName(uint(id))),
 			})
 	}
 
@@ -63,8 +61,8 @@ func GetCartAlerts(cart *Cart, product_list ProductListId) {
 
 					cart.Alerts = append(cart.Alerts,
 						Alert{Type: "warning",
-							Message: fmt.Sprintf("Product price of p_id %d changed, from %d to %d",
-								order.ProductId,
+							Message: fmt.Sprintf("Product price of \"%s\" changed, from %d to %d",
+								order.ProductName,
 								cart.Items[idx].ProductPrice,
 								product.Price),
 						})

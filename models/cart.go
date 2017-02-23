@@ -33,14 +33,14 @@ type CheckoutReturn struct {
 }
 
 type Alert struct {
-	Type    string
-	Message string
+	Type    string `json:"type"`
+	Message string `json:"message"`
 }
 
 type Cart struct {
 	Id          uint   `json:"-"`
 	AccessToken string `json:"access_token,omitempty"`
-	IsCheckout  bool   `json:"is_checkout"`
+	IsCheckout  bool   `json:"-"`
 
 	Items []CartItem `json:"items" sql:"cart_items"`
 
@@ -67,7 +67,7 @@ type OrderStatusLog struct {
 type CartItem struct {
 	Id                       uint    `json:"id,string" sql:"id"`
 	CartId                   uint    `json:"-" sql:"REFERENCES Carts(id)"`
-	ProductId                uint    `json:"product_id" sql:"column:product_id"`
+	ProductId                uint    `json:"product_id,string" sql:"column:product_id"`
 	ProductName              string  `json:"name" sql:"column:name"`
 	ProductImageThumbnailUrl *string `json:"image_thumbnail_url" sql:"-"`
 	ProductPrice             int     `json:"price" sql:"column:price"`

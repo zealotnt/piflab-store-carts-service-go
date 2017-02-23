@@ -63,7 +63,7 @@ func (form *CheckoutCartForm) Validate() error {
 		return errors.New("Customer's Phone number is required")
 	}
 	if err := ValidatePhone(*form.CustomerPhone); err != nil {
-		return errors.New("Customer's Phone number is invalid, reason: " + err.Error())
+		return errors.New("Customer's Phone number " + err.Error())
 	}
 
 	if form.CustomerEmail == nil {
